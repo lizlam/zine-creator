@@ -1,0 +1,85 @@
+.app {
+  padding: 1rem;
+  font-family: sans-serif;
+}
+
+.editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.editor-page {
+  flex: 1 0 21%;
+}
+
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  width: 11in;
+  height: 8.5in;
+  border: 1px solid #000;
+  margin-bottom: 1rem;
+  transform: scale(0.8);
+  transform-origin: top left;
+  background: white;
+  position: relative;
+}
+
+.zine-page {
+  border: 1px solid #999;
+  padding: .25rem;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+  height: 100%;
+  color: black;
+}
+
+.page-label {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+  align-self: center;
+}
+
+/* Hide labels when exporting to PDF (print mode) */
+@media print {
+  .page-label {
+    display: none !important;
+  }
+}
+
+.page-text {
+  white-space: pre-wrap;
+  margin-bottom: 1rem;
+  width: 100%;
+  min-height: 3rem;
+  word-break: break-word;
+}
+
+/* Flip the top row pages upside down */
+.upside-down {
+  transform: rotate(180deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  position: relative;
+}
+
+/* Draggable image cursor */
+.zine-page img {
+  cursor: grab;
+  user-select: none;
+}
+.zine-page img:active {
+  cursor: grabbing;
+}
+
