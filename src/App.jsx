@@ -5,29 +5,25 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 function App() {
-  const [showLabels, setShowLabels] = useState(true);
-
   const [pages, setPages] = useState(
     Array(8).fill(null).map(() => ({
       text: '',
       image: null,
       imagePos: { x: 0, y: 0 },
+      imageSize: { width: 100, height: 100 },
     }))
   );
 
-  // Update text of page
+  const [showLabels, setShowLabels] = useState(true);
+
   const handleTextChange = (index, newText) => {
     setPages((prevPages) => {
       const newPages = [...prevPages];
-      newPages[index] = {
-        ...newPages[index],
-        text: newText,
-      };
+      newPages[index] = { ...newPages[index], text: newText };
       return newPages;
     });
   };
 
-  // Update image of page and reset position
   const handleImageChange = (index, newImage) => {
     setPages((prevPages) => {
       const newPages = [...prevPages];
@@ -35,19 +31,24 @@ function App() {
         ...newPages[index],
         image: newImage,
         imagePos: { x: 0, y: 0 },
+        imageSize: { width: 100, height: 100 },
       };
       return newPages;
     });
   };
 
-  // Update image position on drag
   const handleImagePosChange = (index, newPos) => {
     setPages((prevPages) => {
       const newPages = [...prevPages];
-      newPages[index] = {
-        ...newPages[index],
-        imagePos: newPos,
-      };
+      newPages[index] = { ...newPages[index], imagePos: newPos };
+      return newPages;
+    });
+  };
+
+  const handleImageSizeChange = (index, newSize) => {
+    setPages((prevPages) => {
+      const newPages = [...prevPages];
+      newPages[index] = { ...newPages[index], imageSize: newSize };
       return newPages;
     });
   };
@@ -66,8 +67,6 @@ function App() {
     pdf.save('zine.pdf');
   };
 
-  // Top row upside down (left to right): 7, 6, 5, 4
-  // Bottom row right side up (left to right): 8, 1, 2, 3
   const printOrder = [7, 6, 5, 4, 8, 1, 2, 3];
 
   return (
@@ -82,92 +81,132 @@ function App() {
         {printOrder.map((pageNum, i) => {
           const pageIndex = pageNum - 1;
           const isTopRow = i < 4;
+          const page = pages[pageIndex];
           let label = `Page ${pageNum}`;
           if (pageNum === 1) label = 'Front Cover';
-          else if (pageNum === 8) label = 'Back Cover';
-
-          const page = pages[pageIndex];
+          if (pageNum === 8) label = 'Back Cover';
 
           return (
             <div
               key={i}
               className={`zine-page ${isTopRow ? 'upside-down' : ''}`}
             >
-	      {showLabels && <div className="page-label">{label}</div>}
+              {showLabels && <div className="page-label">{label}</div>}
               <div className="page-text">{page.text}</div>
               {page.image && (
                 <DraggableImage
                   index={pageIndex}
                   src={page.image}
                   pos={page.imagePos}
+                  size={page.imageSize}
                   onPosChange={handleImagePosChange}
+                  onSizeChange={handleImageSizeChange}
                 />
               )}
             </div>
           );
         })}
       </div>
+
       <button onClick={exportToPDF}>Export to PDF</button>
       <button onClick={() => setShowLabels((prev) => !prev)}>
         {showLabels ? 'Hide Labels' : 'Show Labels'}
       </button>
-
     </div>
   );
 }
 
-function DraggableImage({ index, src, pos, onPosChange }) {
-  const dragData = useRef({
-    dragging: false,
-    startX: 0,
-    startY: 0,
-    origX: 0,
-    origY: 0,
-  });
+function DraggableImage({ index, src, pos, size, onPosChange, onSizeChange }) {
+  const dragData = useRef({});
+  const resizeData = useRef({});
 
   const onMouseDown = (e) => {
     e.preventDefault();
-    dragData.current.dragging = true;
-    dragData.current.startX = e.clientX;
-    dragData.current.startY = e.clientY;
-    dragData.current.origX = pos.x;
-    dragData.current.origY = pos.y;
+    dragData.current = {
+      dragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: pos.x,
+      origY: pos.y,
+    };
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
   };
 
   const onMouseMove = (e) => {
-    if (!dragData.current.dragging) return;
-    const deltaX = e.clientX - dragData.current.startX;
-    const deltaY = e.clientY - dragData.current.startY;
-    onPosChange(index, {
-      x: dragData.current.origX + deltaX,
-      y: dragData.current.origY + deltaY,
-    });
+    if (dragData.current.dragging) {
+      const dx = e.clientX - dragData.current.startX;
+      const dy = e.clientY - dragData.current.startY;
+      onPosChange(index, {
+        x: dragData.current.origX + dx,
+        y: dragData.current.origY + dy,
+      });
+    } else if (resizeData.current.resizing) {
+      const dx = e.clientX - resizeData.current.startX;
+      const dy = e.clientY - resizeData.current.startY;
+      onSizeChange(index, {
+        width: Math.max(20, resizeData.current.origWidth + dx),
+        height: Math.max(20, resizeData.current.origHeight + dy),
+      });
+    }
   };
 
   const onMouseUp = () => {
     dragData.current.dragging = false;
+    resizeData.current.resizing = false;
     window.removeEventListener('mousemove', onMouseMove);
     window.removeEventListener('mouseup', onMouseUp);
   };
 
+  const onResizeMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeData.current = {
+      resizing: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      origWidth: size.width,
+      origHeight: size.height,
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
   return (
-    <img
-      src={src}
-      alt="page"
-      onMouseDown={onMouseDown}
+    <div
       style={{
         position: 'absolute',
         left: pos.x,
         top: pos.y,
-        maxWidth: '200%',
-        maxHeight: '200%',
+        width: size.width,
+        height: size.height,
         userSelect: 'none',
-        cursor: 'grab',
       }}
-      draggable={false}
-    />
+      onMouseDown={onMouseDown}
+    >
+      <img
+        src={src}
+        alt="zine"
+        style={{
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+        }}
+        draggable={false}
+      />
+      <div
+        onMouseDown={onResizeMouseDown}
+        style={{
+          position: 'absolute',
+          right: 0,
+          bottom: 0,
+          width: 12,
+          height: 12,
+          background: 'black',
+          cursor: 'nwse-resize',
+        }}
+      />
+    </div>
   );
 }
 
