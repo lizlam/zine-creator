@@ -102,6 +102,15 @@
   right: 4px;
 }
 
+.zine-page.upside-down:hover {
+  transform: rotate(0deg) !important;
+  transition: transform 0.3s ease;
+  z-index: 100; /* bring it on top while hovered */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+
 
 .page-label {
   position: absolute;
