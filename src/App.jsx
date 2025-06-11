@@ -78,6 +78,10 @@ function App() {
         onImageChange={handleImageChange}
       />
       <div id="print-layout" className="sheet">
+        {/* Fold lines */}
+        <div className="fold-line-vertical" />
+        <div className="fold-line-vertical" />
+
         {printOrder.map((pageNum, i) => {
           const pageIndex = pageNum - 1;
           const isTopRow = i < 4;
@@ -190,7 +194,9 @@ function DraggableImage({ index, src, pos, size, onPosChange, onSizeChange }) {
         style={{
           width: '100%',
           height: '100%',
+          display: 'block',
           pointerEvents: 'none',
+          userSelect: 'none',
         }}
         draggable={false}
       />
@@ -198,12 +204,13 @@ function DraggableImage({ index, src, pos, size, onPosChange, onSizeChange }) {
         onMouseDown={onResizeMouseDown}
         style={{
           position: 'absolute',
+          width: '12px',
+          height: '12px',
+          background: 'rgba(0,0,0,0.5)',
           right: 0,
           bottom: 0,
-          width: 12,
-          height: 12,
-          background: 'black',
           cursor: 'nwse-resize',
+          userSelect: 'none',
         }}
       />
     </div>
